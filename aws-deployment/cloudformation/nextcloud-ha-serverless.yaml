@@ -134,7 +134,7 @@ Resources:
             NoncurrentVersionTransitions:
               - StorageClass: STANDARD_IA
                 TransitionInDays: 30
-            NoncurrentVersionExpirations:
+            NoncurrentVersionExpiration:
               NoncurrentDays: 90
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
@@ -190,7 +190,7 @@ Resources:
     Type: AWS::RDS::DBCluster
     Properties:
       Engine: aurora-postgresql
-      EngineVersion: '15.4'
+      EngineVersion: '15.17'
       DatabaseName: nextcloud
       MasterUsername: nextcloud
       MasterUserPassword: !Ref DBPassword
