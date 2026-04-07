@@ -1,0 +1,313 @@
+# CloudWatch Alarms Configuration
+# This file defines critical alarms for the Nextcloud deployment
+# Deploy these alarms using AWS CLI or integrate into CloudFormation
+
+# SNS Topic for Notifications
+# Create with: aws sns create-topic --name nextcloud-alerts --region us-east-1
+# Subscribe: aws sns subscribe --topic-arn <ARN> --protocol email --notification-endpoint your@email.com
+
+Alarms:
+  # ECS Service Alarms
+  - AlarmName: Nextcloud-ECS-HighCPU
+    MetricName: CPUUtilization
+    Namespace: AWS/ECS
+    Statistic: Average
+    Period: 300  # 5 minutes
+    EvaluationPeriods: 1
+    Threshold: 80
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: ServiceName
+        Value: !Ref ECSService  # Reference from CloudFormation
+      - Name: ClusterName
+        Value: !Ref ECSCluster
+    AlarmDescription: "ECS tasks CPU utilization is above 80% for 5 minutes"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  - AlarmName: Nextcloud-ECS-HighMemory
+    MetricName: MemoryUtilization
+    Namespace: AWS/ECS
+    Statistic: Average
+    Period: 300  # 5 minutes
+    EvaluationPeriods: 1
+    Threshold: 85
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: ServiceName
+        Value: !Ref ECSService
+      - Name: ClusterName
+        Value: !Ref ECSCluster
+    AlarmDescription: "ECS tasks memory utilization is above 85% for 5 minutes"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  - AlarmName: Nextcloud-ECS-NoRunningTasks
+    MetricName: RunningTaskCount
+    Namespace: AWS/ECS
+    Statistic: Average
+    Period: 60
+    EvaluationPeriods: 2
+    Threshold: 1
+    ComparisonOperator: LessThanThreshold
+    Dimensions:
+      - Name: ServiceName
+        Value: !Ref ECSService
+      - Name: ClusterName
+        Value: !Ref ECSCluster
+    AlarmDescription: "No ECS tasks are running"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: breaching
+
+  # Application Load Balancer Alarms
+  - AlarmName: Nextcloud-ALB-High5xxErrors
+    MetricName: HTTPCode_Target_5XX_Count
+    Namespace: AWS/ApplicationELB
+    Statistic: Sum
+    Period: 300  # 5 minutes
+    EvaluationPeriods: 1
+    Threshold: 10
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+    AlarmDescription: "More than 10 5xx errors in 5 minutes"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  - AlarmName: Nextcloud-ALB-UnhealthyTargets
+    MetricName: UnHealthyHostCount
+    Namespace: AWS/ApplicationELB
+    Statistic: Average
+    Period: 60
+    EvaluationPeriods: 2
+    Threshold: 0
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: TargetGroup
+        Value: !GetAtt TargetGroup.TargetGroupFullName
+      - Name: LoadBalancer
+        Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+    AlarmDescription: "Unhealthy targets detected in target group"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  - AlarmName: Nextcloud-ALB-HighResponseTime
+    MetricName: TargetResponseTime
+    Namespace: AWS/ApplicationELB
+    Statistic: Average
+    Period: 300
+    EvaluationPeriods: 2
+    Threshold: 3.0  # 3 seconds
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+    AlarmDescription: "Average response time exceeds 3 seconds for 10 minutes"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  # Aurora Database Alarms
+  - AlarmName: Nextcloud-Aurora-HighCPU
+    MetricName: CPUUtilization
+    Namespace: AWS/RDS
+    Statistic: Average
+    Period: 300
+    EvaluationPeriods: 2  # 10 minutes total
+    Threshold: 80
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: DBClusterIdentifier
+        Value: !Ref AuroraDBCluster
+    AlarmDescription: "Aurora cluster CPU utilization above 80% for 10 minutes"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  - AlarmName: Nextcloud-Aurora-HighConnections
+    MetricName: DatabaseConnections
+    Namespace: AWS/RDS
+    Statistic: Average
+    Period: 300
+    EvaluationPeriods: 1
+    Threshold: 4500  # 90% of 5000 max for Aurora
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: DBClusterIdentifier
+        Value: !Ref AuroraDBCluster
+    AlarmDescription: "Database connections exceed 90% of maximum"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  - AlarmName: Nextcloud-Aurora-ReplicaLag
+    MetricName: AuroraReplicaLag
+    Namespace: AWS/RDS
+    Statistic: Average
+    Period: 60
+    EvaluationPeriods: 5  # 5 minutes
+    Threshold: 1000  # 1 second in milliseconds
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: DBClusterIdentifier
+        Value: !Ref AuroraDBCluster
+    AlarmDescription: "Aurora replica lag exceeds 1 second"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  - AlarmName: Nextcloud-Aurora-LowStorageSpace
+    MetricName: FreeLocalStorage
+    Namespace: AWS/RDS
+    Statistic: Average
+    Period: 300
+    EvaluationPeriods: 1
+    Threshold: 5368709120  # 5 GB in bytes
+    ComparisonOperator: LessThanThreshold
+    Dimensions:
+      - Name: DBClusterIdentifier
+        Value: !Ref AuroraDBCluster
+    AlarmDescription: "Aurora free local storage is below 5 GB"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  # ElastiCache Redis Alarms
+  - AlarmName: Nextcloud-Redis-HighCPU
+    MetricName: CPUUtilization
+    Namespace: AWS/ElastiCache
+    Statistic: Average
+    Period: 300
+    EvaluationPeriods: 2
+    Threshold: 75
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: CacheClusterId
+        Value: !Ref ElastiCacheCluster
+    AlarmDescription: "Redis CPU utilization above 75% for 10 minutes"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  - AlarmName: Nextcloud-Redis-HighMemory
+    MetricName: DatabaseMemoryUsagePercentage
+    Namespace: AWS/ElastiCache
+    Statistic: Average
+    Period: 300
+    EvaluationPeriods: 1
+    Threshold: 85
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: CacheClusterId
+        Value: !Ref ElastiCacheCluster
+    AlarmDescription: "Redis memory usage above 85%"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  - AlarmName: Nextcloud-Redis-HighEvictions
+    MetricName: Evictions
+    Namespace: AWS/ElastiCache
+    Statistic: Sum
+    Period: 300
+    EvaluationPeriods: 1
+    Threshold: 100
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: CacheClusterId
+        Value: !Ref ElastiCacheCluster
+    AlarmDescription: "Redis evictions exceed 100 in 5 minutes - increase cache size"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  - AlarmName: Nextcloud-Redis-LowCacheHitRate
+    # Composite alarm using expression
+    MetricName: CacheHitRate
+    Namespace: AWS/ElastiCache
+    Metrics:
+      - Id: hits
+        MetricStat:
+          Metric:
+            Namespace: AWS/ElastiCache
+            MetricName: CacheHits
+            Dimensions:
+              - Name: CacheClusterId
+                Value: !Ref ElastiCacheCluster
+          Period: 900  # 15 minutes
+          Stat: Sum
+      - Id: misses
+        MetricStat:
+          Metric:
+            Namespace: AWS/ElastiCache
+            MetricName: CacheMisses
+            Dimensions:
+              - Name: CacheClusterId
+                Value: !Ref ElastiCacheCluster
+          Period: 900
+          Stat: Sum
+      - Id: hit_rate
+        Expression: "(hits/(hits+misses))*100"
+    EvaluationPeriods: 1
+    Threshold: 70
+    ComparisonOperator: LessThanThreshold
+    AlarmDescription: "Redis cache hit rate below 70% for 15 minutes"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  # S3 Storage Alarms
+  - AlarmName: Nextcloud-S3-LargeStorageSize
+    MetricName: BucketSizeBytes
+    Namespace: AWS/S3
+    Statistic: Average
+    Period: 86400  # Daily
+    EvaluationPeriods: 1
+    Threshold: 1099511627776  # 1 TB in bytes
+    ComparisonOperator: GreaterThanThreshold
+    Dimensions:
+      - Name: BucketName
+        Value: !Ref S3Bucket
+      - Name: StorageType
+        Value: StandardStorage
+    AlarmDescription: "S3 storage size exceeds 1 TB - review costs"
+    AlarmActions:
+      - !Ref SNSTopic
+    TreatMissingData: notBreaching
+
+  # Composite Alarms
+  - AlarmName: Nextcloud-CriticalSystemFailure
+    AlarmRule: "ALARM(Nextcloud-ECS-NoRunningTasks) OR ALARM(Nextcloud-ALB-UnhealthyTargets)"
+    AlarmDescription: "Critical: System is completely down or all targets unhealthy"
+    AlarmActions:
+      - !Ref SNSTopic
+    ActionsEnabled: true
+
+# Deployment Instructions:
+#
+# Option 1: Add to CloudFormation template (recommended)
+#   - Copy the alarm definitions above into your CloudFormation template
+#   - Add SNS topic resource
+#   - Deploy with the stack
+#
+# Option 2: Deploy via AWS CLI
+#   aws cloudwatch put-metric-alarm \
+#     --alarm-name Nextcloud-ECS-HighCPU \
+#     --alarm-description "ECS tasks CPU utilization is above 80% for 5 minutes" \
+#     --metric-name CPUUtilization \
+#     --namespace AWS/ECS \
+#     --statistic Average \
+#     --period 300 \
+#     --evaluation-periods 1 \
+#     --threshold 80 \
+#     --comparison-operator GreaterThanThreshold \
+#     --dimensions Name=ServiceName,Value=your-service Name=ClusterName,Value=your-cluster \
+#     --alarm-actions arn:aws:sns:us-east-1:123456789:nextcloud-alerts
+#
+# Option 3: Use Terraform/CDK for infrastructure as code

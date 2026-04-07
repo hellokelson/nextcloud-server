@@ -1,0 +1,159 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          ["AWS/ECS", "CPUUtilization", {"stat": "Average", "label": "ECS CPU"}],
+          [".", "MemoryUtilization", {"stat": "Average", "label": "ECS Memory"}]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "ECS Resource Utilization",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100,
+            "label": "Percent"
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          ["AWS/ECS", "DesiredTaskCount", {"stat": "Average"}],
+          [".", "RunningTaskCount", {"stat": "Average"}]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "ECS Task Count",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          ["AWS/RDS", "ServerlessDatabaseCapacity", {"stat": "Average", "label": "Aurora ACU"}],
+          [".", "CPUUtilization", {"stat": "Average", "label": "Aurora CPU"}]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Aurora Serverless Metrics",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          ["AWS/RDS", "DatabaseConnections", {"stat": "Average"}]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Database Connections",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          ["AWS/ElastiCache", "CacheHits", {"stat": "Sum"}],
+          [".", "CacheMisses", {"stat": "Sum"}]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Redis Cache Performance",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          ["AWS/ElastiCache", "BytesUsedForCache", {"stat": "Average"}]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Redis Memory Usage",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          ["AWS/ApplicationELB", "RequestCount", {"stat": "Sum", "label": "Total Requests"}],
+          [".", "TargetResponseTime", {"stat": "Average", "label": "Response Time"}]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "ALB Performance",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          ["AWS/ApplicationELB", "HTTPCode_Target_2XX_Count", {"stat": "Sum", "color": "#2ca02c"}],
+          [".", "HTTPCode_Target_4XX_Count", {"stat": "Sum", "color": "#ff7f0e"}],
+          [".", "HTTPCode_Target_5XX_Count", {"stat": "Sum", "color": "#d62728"}]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "HTTP Response Codes",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          ["AWS/ApplicationELB", "TargetConnectionErrorCount", {"stat": "Sum"}],
+          [".", "UnHealthyHostCount", {"stat": "Average"}]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Target Health",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          ["AWS/S3", "NumberOfObjects", {"stat": "Average"}],
+          [".", "BucketSizeBytes", {"stat": "Average"}]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "S3 Storage Metrics",
+        "period": 86400
+      }
+    },
+    {
+      "type": "log",
+      "properties": {
+        "query": "SOURCE '/ecs/nextcloud-production'\n| fields @timestamp, @message\n| filter @message like /error/i or @message like /exception/i\n| sort @timestamp desc\n| limit 20",
+        "region": "us-east-1",
+        "title": "Recent Errors",
+        "stacked": false
+      }
+    }
+  ]
+}
