@@ -487,6 +487,8 @@ Resources:
               ContainerPath: /var/www/html/config
             - SourceVolume: efs-custom-apps
               ContainerPath: /var/www/html/custom_apps
+            - SourceVolume: efs-data
+              ContainerPath: /var/www/html/data
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -509,6 +511,12 @@ Resources:
             AuthorizationConfig:
               IAM: DISABLED
         - Name: efs-custom-apps
+          EFSVolumeConfiguration:
+            FilesystemId: !Ref NextcloudEFS
+            TransitEncryption: ENABLED
+            AuthorizationConfig:
+              IAM: DISABLED
+        - Name: efs-data
           EFSVolumeConfiguration:
             FilesystemId: !Ref NextcloudEFS
             TransitEncryption: ENABLED
