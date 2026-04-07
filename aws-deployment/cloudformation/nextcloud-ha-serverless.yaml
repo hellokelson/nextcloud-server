@@ -305,11 +305,11 @@ Resources:
       TargetType: ip
       HealthCheckEnabled: true
       HealthCheckProtocol: HTTP
-      HealthCheckPath: /status.php
-      HealthCheckIntervalSeconds: 30
-      HealthCheckTimeoutSeconds: 5
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 60
+      HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 3
+      UnhealthyThresholdCount: 10
       Matcher:
         HttpCode: '200'
       TargetGroupAttributes:
@@ -545,7 +545,7 @@ Resources:
         DeploymentCircuitBreaker:
           Enable: true
           Rollback: true
-      HealthCheckGracePeriodSeconds: 120
+      HealthCheckGracePeriodSeconds: 600
       Tags:
         - Key: Name
           Value: nextcloud-service
