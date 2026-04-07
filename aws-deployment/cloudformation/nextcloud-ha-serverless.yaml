@@ -191,7 +191,7 @@ Resources:
     Properties:
       Engine: aurora-postgresql
       EngineVersion: '15.17'
-      DatabaseName: nextcloud
+      # Use default 'postgres' database to avoid PostgreSQL 15+ schema permission issues
       MasterUsername: nextcloud
       MasterUserPassword: !Ref DBPassword
       BackupRetentionPeriod: 7
@@ -452,7 +452,7 @@ Resources:
             - Name: POSTGRES_HOST
               Value: !GetAtt AuroraCluster.Endpoint.Address
             - Name: POSTGRES_DB
-              Value: nextcloud
+              Value: postgres
             - Name: POSTGRES_USER
               Value: nextcloud
             - Name: REDIS_HOST
